@@ -1,0 +1,2 @@
+# lootlotto
+Blockchain-based Lottery
