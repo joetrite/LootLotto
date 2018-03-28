@@ -1,6 +1,6 @@
 ## Welcome to Loot Lotto (Beta)
 
-## Loot Lotto a decentralized lottery application as well as a decentralized organization in one smart contract.  The smart contract is executed in the etherum blockchain using the Rinkeby test blockchain.  The purpose of this project is to learn and gain experience with smart contracts and decentralized organizations.
+### Loot Lotto a decentralized lottery application as well as a decentralized organization in one smart contract.  The smart contract is executed in the etherum blockchain using the Rinkeby test blockchain.  The purpose of this project is to learn and gain experience with smart contracts and decentralized organizations.
 
 ### How to play:
 - Each ticket costs 4 finney (.004 ether)
