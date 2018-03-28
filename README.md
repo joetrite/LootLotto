@@ -1,37 +1,12 @@
-## Welcome to GitHub Pages
+## Welcome to Loot Lotto (Beta)
 
-You can use the [editor on GitHub](https://github.com/joetrite/lootlotto/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+### Loot Lotto a decentralized lottery application as well as a decentralized organization in one smart contract.  The smart contract is executed in the etherum blockchain using the Rinkeby test blockchain.  The purpose of this project is to learn and gain experience with smart contracts and decentralized organizations.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### How to play:
+- Each ticket costs 4 finney (.004 ether)
+- You can purchace a maximum of 50 tickets at a time (200 finney, .2 ether)
+- Tickets are purchased by sending an amount of ether to the lottery id listed below
+- At the date/time below the drawing will occur and all money will be automatically transferred back to the account used to purchase the tickets
+- Payouts: 70% of ticket profit goes to jackpot, 20% goes to founders, 0.5% goes to executives, 0.3% is split between team members and 0.2% split between all players/entries (values are set in the contract and can be adjusted by the entity controlling the contract).
 
-### Markdown
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/joetrite/lootlotto/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
