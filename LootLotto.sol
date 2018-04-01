@@ -1,198 +1,268 @@
 pragma solidity 0.4.21;
 
 contract LootLotto {
-    
-    string private constant name = "Loot Lotto";
-    string private constant symbol = "LOLO";
-    string private constant version = "0.1";
-    string private iteration = "March 31 2018 23:59:59 UTC";
-    
-    address private owner;
-    address private winner;  
-    
-    address[] private founders;
-    address[] private executives;
-    address[] private team;
-    address[] private players;
-    address[] private entries;
-    
-    uint private founderCut = 0;
-    uint private executiveCut = 0;
-    uint private teamCut = 0;
-    uint private playersCut = 0;
-    uint private winnersCut = 0;
 
-    uint private winningNumber = 0;
+    address addr;
+    uint jackpot;
+    uint ticketPrice;
+    uint maxTicketsAvailable;
+    uint maxEtherAmountPerPlay;
+    uint endEpoch;
+    uint startEpoch;
+    string name;
+    string symbol;
+    string version;
+    string desc;
+            
+    bool isLocked;
+    uint founderCut;
+    uint officerCut;
+    uint developerCut;
+    uint playerCut;
+    uint winnerCut;
     
-    //operational
-    uint private numberOfEntries = 0;
-    uint private entriesFromAmount = 0;
+    uint winningNumber ;
     
-    //4 finney, .04 ether
-    uint private constant ticketPrice = 4000000000000000 wei;
+    uint totalNumberOfTicketsSold;
     
-    //200 finney, .2 ether
-    uint private constant maxTicketPurchase = 200000000000000000 wei;
+    uint numberOfTicketsForPlay;
+    bool isDrawn;
     
-    bool private isDrawn = false;
-    uint private constant maxTickets = 1000000000;
+    address owner;
+    address[] founders;
+    address[] officers;    
+    address[] developers;    
+    address[] players; //this will hold a 
+    
+    address[] entries;
+    address[] winners;
+   
+    mapping (address => uint) jackpotBalances;
+    mapping (address => uint) founderBalances;
+    mapping (address => uint) officerBalances;
+    mapping (address => uint) developerBalances; 
+    mapping (address => uint) playerBalances;
+    
+    mapping (address => uint) jackpotClaims;
+    mapping (address => uint) founderClaims;
+    mapping (address => uint) officerClaims;
+    mapping (address => uint) developerClaims;
+    mapping (address => uint) playerClaims;
 
-    uint private startTime;
-    uint private endTime;
-  
-  function getVersion() public pure returns (string) {
-    return version;
-  }
-  
-  function getIteration() public view returns (string) {
-    return iteration;
+      
+    function getVersion() public view returns (string) {
+        return version;
+    }
     
-  }
-  
-  function getSymbol() public pure returns (string) {
-    return symbol;
+    function getDescription() public view returns (string) {
+        return desc;
+    }
     
-  }
-  
-  function getName() public pure returns (string) {
-    return name;
+    function getSymbol() public view returns (string) {
+        return symbol;
+    }
     
-  }
-  
-  function getEntriesFromAmount() internal constant returns (uint) {
-    return entriesFromAmount;
+    function getName() public view returns (string) {
+        return name;
+    }
     
-  }
-  
-  function getOwner() public constant returns (address) {
-     return owner;
-  }
-  
-  function getWinner() public constant returns (address) {
-     return winner;
-  }
-  
-  function getWinnerCut() public constant returns (uint) {
-     return winnersCut;
-  }
-  
-   function getFounderCut() public constant returns (uint) {
-     return founderCut;
-  }
-  
-  function getExecutiveCut() public constant returns (uint) {
-     return executiveCut;
-  }
- 
-  function getTeamCut() public constant returns (uint) {
-     return teamCut;
-  }
-  
-  function getPlayersCut() public constant returns (uint) {
-     return playersCut;
-  }
-  
-  function getEntryCount() public constant returns (uint) {
-     return numberOfEntries;
-  }
-  
-  function getWinningNumber() public constant returns (uint) {
-     return winningNumber;
-  }
-  
-  function getCurrentTime() public constant returns (uint) {
-    return now;
-  }
-  
-  function getStartTime() public constant returns (uint) {
-    return startTime;
-  }
-  
-  function lotteryIsDrawn() public constant returns (bool) {
-    return isDrawn;
-  }
-  
-  function getEndTime() public constant returns (uint) {
-    return endTime;
-  }
-  
-  function LootLotto(string _iteration, uint _endTime) public {
-    owner=msg.sender;
-    founders.push(msg.sender);
-    executives.push(msg.sender);
-    team.push(msg.sender);
-    startTime = now;
-    endTime = _endTime;
-    iteration = _iteration;
-  }
-  
-  function () public payable {
+    function getNumberOfTicketsForPlay() internal constant returns (uint) {
+        return numberOfTicketsForPlay;
+    }
+    
+    function getOwner() public constant returns (address) {
+        return owner;
+    }
+    
+    function getWinner(uint idx) public constant returns (address) {
+        return winners[idx];
+    }
+    
+    function getWinnerCut() public constant returns (uint) {
+     return winnerCut;
+    }
+    
+    function getFounderCut() public constant returns (uint) {
+        return founderCut;
+    }
+    
+    function getOfficerCut() public constant returns (uint) {
+        return officerCut;
+    }
+    
+    function getDevelopersCut() public constant returns (uint) {
+        return developerCut;
+    }
+    
+    function getPlayersCut() public constant returns (uint) {
+        return playerCut;
+    }
+    
+    function getEntryCount() public constant returns (uint) {
+        return totalNumberOfTicketsSold;
+    }
+    
+    function getWinningNumber() public constant returns (uint) {
+        return winningNumber;
+    }
+    
+    function getCurrentTime() public constant returns (uint) {
+        return now;
+    }
+    
+    function lotteryIsDrawn() public constant returns (bool) {
+        return isDrawn;
+    }
+    
+    function getJackpot() public constant returns (uint) {
+        return jackpot;
+    }
+    
+    function getContractBalance() public constant returns (uint) {
+        return address(this).balance;
+    }
+    
+    function isFounder(address verify_address) public constant returns (bool) {
+        for(uint f=0; f<founders.length; f++){
+          if(founders[f] == verify_address) {
+              return true;
+          }
+        }
+        return false;
+    }
+    
+    function LootLotto( uint _epochDuration) public {
+        owner = msg.sender;
+        founders.push(msg.sender);
+        officers.push(msg.sender);
+        developers.push(msg.sender);
+        players.push(msg.sender);
+        
+        startEpoch = now;
+        endEpoch = now + _epochDuration;
+        
+        name = "Loot Lotto";
+        symbol = "LOLO";
+        version = "0.1";
+        desc = "Etherum based blockchain lottery.";
+        
+        founderCut = 0;
+        officerCut = 0;
+        developerCut = 0;
+        playerCut = 0;
+        winnerCut = 0;
+        
+        winningNumber = 0;
+        
+        //operational
+        totalNumberOfTicketsSold = 0;
+        numberOfTicketsForPlay = 0;
+        
+        //10 finney, .01 ether
+        ticketPrice = 4000000000000000 wei;
+        
+        //100 finney, .1 ether
+        maxEtherAmountPerPlay = 200000000000000000 wei;
+        
+        isDrawn = false;
+        maxTicketsAvailable = 1000000000;
+        isLocked = false;
+    }
+    
+    function () public payable {
         require(isDrawn==false);
-        sellTicket();
-  }
-  
-  function sellTicket() public payable {
-    //calculate number of entries based on msg.value
-    require(msg.value >= ticketPrice);
-    require(msg.value <= maxTicketPurchase);
-    entriesFromAmount = (msg.value / ticketPrice);
-    require((numberOfEntries + entriesFromAmount) <= maxTickets);
-       
-    for(uint playEntries = 0; playEntries < entriesFromAmount ; playEntries++){
-        numberOfEntries = entries.push(msg.sender);
-
-        winnersCut += (2800 szabo);
-        founderCut += (800 szabo);
-        executiveCut += (200 szabo);
-        teamCut += (120 szabo);
-        playersCut += (80 szabo);
+        require(isLocked==false);
+        BuyTicket();
     }
     
-    players.push(msg.sender);
-    
-    playEntries = 0;
-    entriesFromAmount = 0;
-    
-    if(endTime < now){
-      require(isDrawn==false);
-      
-      winningNumber = uint(block.blockhash(block.number-1))%numberOfEntries + 1;
-      winner = entries[winningNumber];
-      
-      //the drawing is over, house takes the cut.
-      for(uint f=0; f<founders.length; f++){
-          founders[f].transfer(founderCut / founders.length);
-      }
-      
-      for(uint e=0;  e<executives.length; e++){
-          executives[e].transfer(executiveCut / executives.length);
-      }
-      
-      for(uint t=0; t<team.length; t++){
-          team[t].transfer(teamCut / team.length);
-      }
-      
-      
-      for(uint p=0; p<players.length; p++){
-          players[p].transfer(playersCut / players.length);
-      }
-      
-      winner.transfer(winnersCut);
-      isDrawn = true;
+    function BuyTicket() public payable {
+        require(isDrawn==false);
+        require(isLocked==false);
+        playerBalances[msg.sender] += msg.value;
+        entries.push(msg.sender);
     }
-  }
-
-  function bytesToAddress(bytes _address) pure internal returns (address) {
-    uint160 m = 0;
-    uint160 b = 0;
-
-    for (uint8 i = 0; i < 20; i++) {
-      m *= 256;
-      b = uint160(_address[i]);
-      m += (b);
+    
+    function Draw() public {
+        require(isDrawn==false);
+        require(isLocked==false);
+            
+        isLocked=true;
+        
+        uint contractBalance = getContractBalance();
+        jackpot = (contractBalance / 100) * 75;
+        founderCut = (contractBalance /100) * 15;
+        officerCut = (contractBalance / 100) * 6;
+        developerCut = (contractBalance / 100) * 3;
+        playerCut = (contractBalance / 100) * 1;
+        
+        totalNumberOfTicketsSold = (contractBalance / ticketPrice);
+        
+        //this is not recommended approach to random numbers.  See oraclize.
+        winningNumber = uint(block.blockhash(block.number-1))%totalNumberOfTicketsSold + 1;
+          
+          //fix this
+        winners.push(entries[winningNumber]);
+        
+        endEpoch = now;
+        isDrawn = true;
     }
-
-    return address(m);
-  }
-
+    
+    function ClaimJackpot() public payable {
+      require(isDrawn);
+      winnerCut = 0;
+      for(uint w=0; w<winners.length;w++){
+          if(winners[w] == msg.sender){
+              winners[w].transfer(winnerCut);
+          }
+      }
+    }
+    
+    function ClaimPlayerShare() public payable {
+      require(isDrawn);
+      require(playerClaims[msg.sender] == 0);
+      playerBalances[msg.sender] = 0;
+      msg.sender.transfer(playerCut);
+    }
+    
+    function ClaimFounderShare() public payable {
+      require(isDrawn);
+      require(founderClaims[msg.sender] == 0);
+      founderBalances[msg.sender] = 0;
+      msg.sender.transfer(founderCut);
+    }
+    
+    
+    function ClaimOfficersShare() public payable {
+      require(isDrawn);
+      require(officerClaims[msg.sender] == 0);
+      officerBalances[msg.sender] = 0;
+      msg.sender.transfer(officerCut);
+    }
+    
+    function ClaimDevelopersShare() public payable {
+      require(isDrawn);
+      require(developerClaims[msg.sender] == 0);
+      founderBalances[msg.sender] = 0;
+      msg.sender.transfer(playerCut);
+    }
+    
+    
+    function DestroyLottery() public payable {
+      //after 30 day of a completed lottery, tranfer any unclaimed balances and destroy the contract.
+      require(isDrawn);
+      require(msg.sender == owner);
+    
+      if((endEpoch + 2629743) > now) {
+        owner.transfer(address(this).balance);
+      }
+      
+      selfdestruct(address(this));
+    }
+    
+    
+    function BuyLottery(address _newOwner) public payable {
+        require(msg.value > 200 ether);
+        owner.transfer(msg.value);
+        owner = _newOwner;
+    }
 }
