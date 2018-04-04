@@ -1,5 +1,12 @@
 pragma solidity 0.4.21;
 
+/*  
+    This smart contract is intended for educational purposes only.  
+    This is not an actual lottery.
+    Do not use or deploy this on any live blockchain networks where value could be transfered!
+    Running an illegal lottery can result in fines and incarceration depending on your jurisdiction.
+*/
+
 contract LootLotto {
 
     address addr;
@@ -7,8 +14,9 @@ contract LootLotto {
     uint ticketPrice;
     uint maxTicketsAvailable;
     uint maxEtherAmountPerPlay;
-    uint endEpoch;
+    uint endEpoch; //when the lottery will be drawn
     uint startEpoch;
+    uint endContract; //when to call selfdestruct
     string name;
     string symbol;
     string version;
@@ -27,27 +35,28 @@ contract LootLotto {
     
     uint numberOfTicketsForPlay;
     bool isDrawn;
+    bool hasStarted;
     
     address owner;
+    
+    //these arrays record each indiviual entry and allow index access.
     address[] founders;
     address[] officers;    
     address[] developers;    
-    address[] players; //this will hold a 
-    
+    address[] players; 
     address[] entries;
     address[] winners;
    
-    mapping (address => uint) jackpotBalances;
-    mapping (address => uint) founderBalances;
-    mapping (address => uint) officerBalances;
-    mapping (address => uint) developerBalances; 
+   //these mapping record each individual entry with balance.
     mapping (address => uint) playerBalances;
-    
     mapping (address => uint) jackpotClaims;
     mapping (address => uint) founderClaims;
     mapping (address => uint) officerClaims;
     mapping (address => uint) developerClaims;
     mapping (address => uint) playerClaims;
+    
+    event newRandomNumber_bytes(bytes);
+    event newRandomNumber_uint(uint);
 
       
     function getVersion() public view returns (string) {
@@ -99,7 +108,7 @@ contract LootLotto {
     }
     
     function getEntryCount() public constant returns (uint) {
-        return totalNumberOfTicketsSold;
+        return entries.length;
     }
     
     function getWinningNumber() public constant returns (uint) {
@@ -114,8 +123,16 @@ contract LootLotto {
         return isDrawn;
     }
     
+    function lotteryIsLocked() public constant returns (bool) {
+        return isLocked;
+    }
+    
+    function lotteryHasStarted() public constant returns (bool) {
+        return hasStarted;
+    }
+    
     function getJackpot() public constant returns (uint) {
-        return jackpot;
+        return winnerCut;
     }
     
     function getContractBalance() public constant returns (uint) {
@@ -131,15 +148,14 @@ contract LootLotto {
         return false;
     }
     
-    function LootLotto( uint _epochDuration) public {
+    
+    function LootLotto() public {
         owner = msg.sender;
         founders.push(msg.sender);
         officers.push(msg.sender);
         developers.push(msg.sender);
-        players.push(msg.sender);
-        
-        startEpoch = now;
-        endEpoch = now + _epochDuration;
+
+
         
         name = "Loot Lotto";
         symbol = "LOLO";
@@ -158,48 +174,58 @@ contract LootLotto {
         totalNumberOfTicketsSold = 0;
         numberOfTicketsForPlay = 0;
         
-        //10 finney, .01 ether
+        //4 finney, .04 ether
         ticketPrice = 4000000000000000 wei;
         
-        //100 finney, .1 ether
+        //200 finney, .2 ether
         maxEtherAmountPerPlay = 200000000000000000 wei;
         
         isDrawn = false;
         maxTicketsAvailable = 1000000000;
         isLocked = false;
+
     }
     
     function () public payable {
-        require(isDrawn==false);
-        require(isLocked==false);
+        require(!isDrawn);
+        require(!isLocked);
+        require(hasStarted);
         BuyTicket();
     }
     
     function BuyTicket() public payable {
-        require(isDrawn==false);
-        require(isLocked==false);
+        require(!isDrawn);
+        require(!isLocked);
+        require(hasStarted);
+        
+        //keep track of how much each player has spent.
         playerBalances[msg.sender] += msg.value;
-        entries.push(msg.sender);
+        
+        numberOfTicketsForPlay =  (msg.value / ticketPrice);
+        for(uint play=0;play <= numberOfTicketsForPlay -1; play++){
+             entries.push(msg.sender);
+        }
     }
     
-    function Draw() public {
+    function Draw(uint randomNumber) public {
         require(isDrawn==false);
         require(isLocked==false);
-            
+        require(randomNumber <= entries.length);
         isLocked=true;
         
         uint contractBalance = getContractBalance();
-        jackpot = (contractBalance / 100) * 75;
+        winnerCut = (contractBalance / 100) * 75;
         founderCut = (contractBalance /100) * 15;
         officerCut = (contractBalance / 100) * 6;
         developerCut = (contractBalance / 100) * 3;
         playerCut = (contractBalance / 100) * 1;
         
-        totalNumberOfTicketsSold = (contractBalance / ticketPrice);
+        //totalNumberOfTicketsSold = (contractBalance / ticketPrice);
         
         //this is not recommended approach to random numbers.  See oraclize.
-        winningNumber = uint(block.blockhash(block.number-1))%totalNumberOfTicketsSold + 1;
-          
+        //winningNumber = uint(block.blockhash(block.number-1))%totalNumberOfTicketsSold + 1;
+        winningNumber = randomNumber;
+        
           //fix this
         winners.push(entries[winningNumber]);
         
@@ -209,43 +235,47 @@ contract LootLotto {
     
     function ClaimJackpot() public payable {
       require(isDrawn);
-      winnerCut = 0;
-      for(uint w=0; w<winners.length;w++){
-          if(winners[w] == msg.sender){
-              winners[w].transfer(winnerCut);
-          }
-      }
+      require(jackpotClaims[msg.sender] == 0);
+      jackpotClaims[msg.sender] = (winnerCut / winners.length);
+      msg.sender.transfer(jackpotClaims[msg.sender]);
     }
     
     function ClaimPlayerShare() public payable {
       require(isDrawn);
       require(playerClaims[msg.sender] == 0);
-      playerBalances[msg.sender] = 0;
-      msg.sender.transfer(playerCut);
+      playerClaims[msg.sender] = (playerCut / players.length);
+      msg.sender.transfer(playerClaims[msg.sender]);
     }
     
     function ClaimFounderShare() public payable {
       require(isDrawn);
       require(founderClaims[msg.sender] == 0);
-      founderBalances[msg.sender] = 0;
-      msg.sender.transfer(founderCut);
+      founderClaims[msg.sender] = (founderCut / founders.length);
+      msg.sender.transfer(founderClaims[msg.sender]);
     }
-    
     
     function ClaimOfficersShare() public payable {
       require(isDrawn);
       require(officerClaims[msg.sender] == 0);
-      officerBalances[msg.sender] = 0;
-      msg.sender.transfer(officerCut);
-    }
+      officerClaims[msg.sender] = (officerCut / officers.length);
+      msg.sender.transfer(officerClaims[msg.sender]);    }
     
     function ClaimDevelopersShare() public payable {
       require(isDrawn);
       require(developerClaims[msg.sender] == 0);
-      founderBalances[msg.sender] = 0;
-      msg.sender.transfer(playerCut);
+      developerClaims[msg.sender] = (developerCut / developers.length);
+      msg.sender.transfer(developerClaims[msg.sender]);
     }
-    
+   
+    function StartLottery(uint _lotteryDurationEpoch, uint _lotteryLifetimeEpoch) public payable {
+        require(!isDrawn);
+        require(msg.sender == owner);
+        hasStarted = true;
+        
+        startEpoch = now;
+        endEpoch = startEpoch + _lotteryDurationEpoch;
+        endContract = startEpoch + _lotteryLifetimeEpoch;
+    } 
     
     function DestroyLottery() public payable {
       //after 30 day of a completed lottery, tranfer any unclaimed balances and destroy the contract.
@@ -254,15 +284,31 @@ contract LootLotto {
     
       if((endEpoch + 2629743) > now) {
         owner.transfer(address(this).balance);
+        selfdestruct(address(this));
       }
-      
-      selfdestruct(address(this));
     }
-    
     
     function BuyLottery(address _newOwner) public payable {
         require(msg.value > 200 ether);
         owner.transfer(msg.value);
         owner = _newOwner;
+    }
+    
+    function addFounder(address _address) public {
+        require(msg.sender == owner);
+        require(!hasStarted); //we cannot change stakeholders after the lottery has started.
+        founders.push(_address);
+    }
+
+    function addOfficer(address _address) public {
+        require(msg.sender == owner);
+        require(!hasStarted) ;//we cannot change stakeholders after the lottery has started.
+        officers.push(_address);
+    }
+    
+    function addDeveloper(address _address) public {
+        require(msg.sender == owner);
+        require(!hasStarted); //we cannot change stakeholders after the lottery has started.
+        developers.push(_address);
     }
 }
